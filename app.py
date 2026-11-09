@@ -3,12 +3,17 @@
 from flask import Flask, render_template, request, redirect, url_for
 import sqlite3
 import requests
+import os
 from pathlib import Path
 
 app = Flask(__name__)
 
 BASE_DIR = Path(__file__).resolve().parent
-DB_NAME = str(BASE_DIR / "safezone.db")
+
+if os.environ.get("VERCEL"):
+    DB_NAME = "/tmp/safezone.db"
+else:
+    DB_NAME = str(BASE_DIR / "safezone.db")
 
 
 
@@ -56,7 +61,8 @@ def init_db():
     conn.commit()
     conn.close()
 
-
+    
+init_db()
 
 @app.route("/")
 def home():
@@ -551,6 +557,4 @@ def add_crime():
         "records_page", message="Crime record added successfully!"
     ))
 if __name__ == "__main__":
-    init_db()
     app.run(debug=True)
-
