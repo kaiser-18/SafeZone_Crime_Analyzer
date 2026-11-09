@@ -1,0 +1,141 @@
+
+{% extends "base.html" %}
+
+{% block title %}Edit Crime Record | SafeZone{% endblock %}
+
+{% block content %}
+
+<style>
+.edit-page {
+    max-width: 750px;
+    margin: 30px auto;
+    color: #e2e8f0;
+}
+
+.edit-header {
+    padding: 25px;
+    background: linear-gradient(120deg, #101e38, #123c70);
+    border-radius: 16px;
+    margin-bottom: 22px;
+}
+
+.edit-header h1 {
+    margin: 0 0 8px;
+}
+
+.edit-header p {
+    color: #bae6fd;
+    margin: 0;
+}
+
+.edit-panel {
+    background: #111d32;
+    border: 1px solid #263b5b;
+    border-radius: 16px;
+    padding: 28px;
+}
+
+.edit-field {
+    margin-bottom: 20px;
+}
+
+.edit-field label {
+    display: block;
+    margin-bottom: 8px;
+    color: #bae6fd;
+}
+
+.edit-field input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 13px;
+    border-radius: 9px;
+    border: 1px solid #334b6c;
+    background: #0b1425;
+    color: white;
+    outline: none;
+}
+
+.edit-field input:focus {
+    border-color: #38bdf8;
+}
+
+.edit-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.edit-save, .edit-cancel {
+    padding: 12px 20px;
+    border-radius: 9px;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.edit-save {
+    background: #0284c7;
+    color: white;
+}
+
+.edit-cancel {
+    background: #334155;
+    color: white;
+}
+</style>
+
+<div class="edit-page">
+
+    <div class="edit-header">
+        <h1>Edit Crime Record</h1>
+        <p>Update the selected record details.</p>
+    </div>
+
+    <div class="edit-panel">
+
+        <form method="POST">
+
+            <div class="edit-field">
+                <label>Crime Category</label>
+                <input type="text" name="crime_type"
+                       value="{{ record[1] }}" required>
+            </div>
+
+            <div class="edit-field">
+                <label>Location</label>
+                <input type="text" name="area"
+                       value="{{ record[2] }}" required>
+            </div>
+
+            <div class="edit-field">
+                <label>Year</label>
+                <input type="number" name="year"
+                       value="{{ record[3] }}" min="1900"
+                       max="2100" required>
+            </div>
+
+            <div class="edit-field">
+                <label>Number of Cases</label>
+                <input type="number" name="cases"
+                       value="{{ record[4] }}" min="1" required>
+            </div>
+
+            <div class="edit-actions">
+                <button type="submit" class="edit-save">
+                    Save Changes
+                </button>
+
+                <a href="{{ url_for('records_page') }}"
+                   class="edit-cancel">
+                    Cancel
+                </a>
+            </div>
+
+        </form>
+
+    </div>
+</div>
+
+{% endblock %}

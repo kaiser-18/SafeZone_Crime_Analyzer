@@ -1,0 +1,359 @@
+
+{% extends "base.html" %}
+
+{% block title %}Crime Intelligence Maps | SafeZone{% endblock %}
+
+{% block content %}
+
+<style>
+.map-page {
+    color: #e2e8f0;
+}
+
+.map-header {
+    padding: 25px;
+    margin-bottom: 22px;
+    border-radius: 16px;
+    background: linear-gradient(120deg, #101e38, #123c70, #075985);
+    border: 1px solid #24558a;
+}
+
+.map-header h1 {
+    margin: 0 0 8px;
+}
+
+.map-header p {
+    color: #bfdbfe;
+    margin: 0;
+}
+
+.map-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+}
+
+.map-panel {
+    background: #14243d;
+    border: 1px solid #263b5b;
+    border-radius: 15px;
+    padding: 16px;
+    min-width: 0;
+}
+
+.map-panel h2 {
+    font-size: 18px;
+    margin-top: 0;
+    color: #93c5fd;
+}
+
+.map-view {
+    height: 330px;
+    width: 100%;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.map-description {
+    color: #cbd5e1;
+    font-size: 13px;
+    line-height: 1.7;
+    margin-bottom: 0;
+}
+
+.map-filter {
+    margin-bottom: 20px;
+}
+
+.map-filter select {
+    padding: 11px;
+    border-radius: 8px;
+    background: #0b1930;
+    color: white;
+    border: 1px solid #35577e;
+}
+
+@media(max-width: 850px) {
+    .map-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+
+<div class="map-page">
+
+    <div class="map-header">
+        <h1>◈ Geographic Crime Intelligence</h1>
+        <p>Four interactive views of recorded crime statistics</p>
+        <p style="margin-top:12px;">● MAPPING SYSTEM ONLINE</p>
+    </div>
+
+    <div class="map-filter">
+        <label>Select Area: </label>
+        <select id="areaFilter">
+            <option value="all">All Areas</option>
+            {% for item in area_data %}
+            <option value="{{ item[0] }}">{{ item[0] }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="map-grid">
+
+        <div class="map-panel">
+            <h2>01. Crime Location Map</h2>
+            <div id="locationMap" class="map-view"></div>
+            <p class="map-description">
+                Displays recorded crime areas using individual location markers.
+                Clicking a marker shows the area name and its recorded case count.
+                Users can zoom in and explore different locations to understand
+                where the available crime records are associated with.
+            </p>
+        </div>
+
+        <div class="map-panel">
+            <h2>02. Crime Heatmap</h2>
+            <div id="heatMap" class="map-view"></div>
+            <p class="map-description">
+                Uses different colour intensities to represent recorded crime
+                counts across mapped areas. Brighter regions indicate higher
+                recorded counts according to the selected data. This visualization
+                helps users compare crime concentration and identify areas
+                requiring further investigation.
+            </p>
+        </div>
+
+        <div class="map-panel">
+            <h2>03. Crime Cluster Map</h2>
+            <div id="clusterMap" class="map-view"></div>
+            <p class="map-description">
+                Groups nearby mapped locations into clusters to make the map
+                easier to understand. Each cluster displays a combined count
+                of its represented records. Users can zoom in to separate
+                individual locations and explore the distribution of recorded
+                crime information across different parts of the region.
+            </p>
+        </div>
+
+        <div class="map-panel">
+            <h2>04. Crime Category Map</h2>
+            <div id="categoryMap" class="map-view"></div>
+            <p class="map-description">
+                Displays crime information according to selected categories
+                such as theft, robbery, assault and fraud. Different colours
+                distinguish the selected category across mapped areas.
+                Users can compare category-wise records and understand how
+                recorded crime types vary between locations.
+            </p>
+        </div>
+
+    </div>
+</div>
+
+<link rel="stylesheet"
+href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
+
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+
+<link rel="stylesheet"
+href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
+
+<link rel="stylesheet"
+href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
+
+<script id="map-data" type="application/json">
+{
+    "areas": {{ area_data | tojson }},
+    "categories": {{ category_data | tojson }}
+}
+</script>
+
+<script>
+
+const mapData = JSON.parse(
+    document.getElementById("map-data").textContent
+);
+
+// Get locations directly from the database
+const locations = mapData.areas.map(item => ({
+    name: item[0],
+    cases: Number(item[1]),
+    lat: Number(item[2]),
+    lng: Number(item[3])
+}));
+
+const center = [22.65, 88.40];
+
+function createMap(id) {
+    const map = L.map(id).setView(center, 10);
+
+    L.tileLayer(
+        "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+        {
+            attribution: "&copy; OpenStreetMap contributors"
+        }
+    ).addTo(map);
+
+    return map;
+}
+
+const locationMap = createMap("locationMap");
+const heatMap = createMap("heatMap");
+const clusterMap = createMap("clusterMap");
+const categoryMap = createMap("categoryMap");
+
+function updateMaps() {
+    const selected = document.getElementById("areaFilter").value;
+
+    const filteredLocations = locations.filter(place =>
+        selected === "all" || place.name === selected
+    );
+
+    [locationMap, heatMap, clusterMap, categoryMap].forEach(map => {
+        map.eachLayer(layer => {
+            if (!(layer instanceof L.TileLayer)) {
+                map.removeLayer(layer);
+            }
+        });
+    });
+
+    const heatPoints = [];
+    const cluster = L.markerClusterGroup();
+    const bounds = [];
+
+    filteredLocations.forEach(place => {
+        const position = [place.lat, place.lng];
+        bounds.push(position);
+
+        // MAP 1: Location markers
+        L.marker(position)
+            .addTo(locationMap)
+            .bindPopup(
+                "<b>" + place.name +
+                "</b><br>Recorded cases: " + place.cases
+            );
+
+        // MAP 2: Heatmap
+        heatPoints.push([
+            place.lat,
+            place.lng,
+            Math.max(place.cases, 1)
+        ]);
+
+        // MAP 3: Cluster map
+        cluster.addLayer(
+            L.marker(position)
+                .bindPopup(
+                    place.name + ": " + place.cases + " cases"
+                )
+        );
+
+        // MAP 4: Crime category map
+        const categories = mapData.categories.filter(
+            item => item[0] === place.name
+        );
+
+        const colors = [
+            "#ef4444",
+            "#3b82f6",
+            "#22c55e",
+            "#eab308",
+            "#a855f7",
+            "#f97316"
+        ];
+
+        categories.forEach((item, index) => {
+            const angle = (index / Math.max(categories.length, 1)) * Math.PI * 2;
+            const offset = 0.0015;
+
+            const lat = place.lat + Math.cos(angle) * offset;
+            const lng = place.lng + Math.sin(angle) * offset;
+
+            L.circleMarker([lat, lng], {
+                radius: 9,
+                color: colors[index % colors.length],
+                fillColor: colors[index % colors.length],
+                fillOpacity: 0.9
+            })
+            .addTo(categoryMap)
+            .bindPopup(
+                "<b>" + place.name + "</b><br>" +
+                item[1] + ": " + item[2] + " cases"
+            );
+        });
+    });
+
+
+// MAP 2: Heatmap
+// MAP 2: Heatmap
+if (heatPoints.length > 0) {
+
+    const maxCases = Math.max(
+        ...heatPoints.map(point => point[2])
+    );
+
+    const normalizedPoints = heatPoints.map(point => [
+        point[0],
+        point[1],
+        point[2] / maxCases
+    ]);
+
+    L.heatLayer(normalizedPoints, {
+        radius: 65,
+        blur: 45,
+        max: 1,
+        minOpacity: 0.6,
+        maxZoom: 17,
+        gradient: {
+            0.1: "blue",
+            0.25: "cyan",
+            0.4: "lime",
+            0.6: "yellow",
+            0.8: "orange",
+            1: "red"
+        }
+    }).addTo(heatMap);
+}
+
+// MAP 3: Cluster map
+clusterMap.addLayer(cluster);
+
+// AUTO ZOOM TO SELECTED AREA
+if (filteredLocations.length === 1) {
+
+    const place = filteredLocations[0];
+
+    [locationMap, heatMap, clusterMap, categoryMap].forEach(map => {
+        map.setView([place.lat, place.lng], 13);
+    });
+
+} else if (filteredLocations.length > 1) {
+
+    [locationMap, heatMap, clusterMap, categoryMap].forEach(map => {
+        map.fitBounds(bounds, {
+            padding: [40, 40],
+            maxZoom: 12
+        });
+    });
+
+}
+    setTimeout(() => {
+        [locationMap, heatMap, clusterMap, categoryMap].forEach(map => {
+            map.invalidateSize();
+        });
+    }, 150);
+}
+
+document.getElementById("areaFilter")
+    .addEventListener("change", updateMaps);
+
+updateMaps();
+
+</script>
+
+{% endblock %}
+

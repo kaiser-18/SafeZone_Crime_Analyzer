@@ -1,0 +1,688 @@
+
+{% extends "base.html" %}
+
+{% block title %}SafeZone | Dashboard{% endblock %}
+
+{% block content %}
+
+<style>
+.dash-welcome {
+    padding: 30px;
+    border-radius: 18px;
+    background: linear-gradient(120deg, #172e55, #1d4ed8, #2563eb);
+    margin-bottom: 25px;
+    box-shadow: 0 10px 30px rgba(37, 99, 235, 0.18);
+}
+
+.dash-welcome h1 {
+    font-size: 30px;
+    margin: 0 0 10px;
+}
+
+.dash-welcome p {
+    color: #dbeafe;
+    margin: 0;
+}
+
+.dash-status {
+    display: inline-block;
+    margin-top: 20px;
+    padding: 7px 13px;
+    border-radius: 20px;
+    background: rgba(15, 23, 42, 0.4);
+    font-size: 13px;
+}
+
+.dash-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 18px;
+    margin-bottom: 28px;
+}
+
+.dash-card {
+    background: #14243d;
+    border: 1px solid #263b5b;
+    border-radius: 15px;
+    padding: 23px;
+    transition: 0.25s;
+}
+
+.dash-card:hover {
+    transform: translateY(-5px);
+    border-color: #3b82f6;
+}
+
+.dash-icon {
+    font-size: 28px;
+    margin-bottom: 15px;
+}
+
+.dash-card h3 {
+    color: #9fb3cc;
+    font-size: 14px;
+    font-weight: normal;
+}
+
+.dash-number {
+    font-size: 32px;
+    font-weight: bold;
+    color: #60a5fa;
+    margin: 8px 0;
+}
+
+.dash-section-title {
+    margin: 30px 0 15px;
+    font-size: 21px;
+}
+
+.dash-shortcuts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 15px;
+}
+
+.dash-shortcut {
+    display: block;
+    text-decoration: none;
+    color: white;
+    background: #14243d;
+    border: 1px solid #263b5b;
+    padding: 20px;
+    border-radius: 13px;
+    transition: 0.25s;
+}
+
+.dash-shortcut:hover {
+    background: #1e3a67;
+    border-color: #60a5fa;
+    transform: translateY(-3px);
+}
+
+.dash-shortcut span {
+    display: block;
+    font-size: 25px;
+    margin-bottom: 10px;
+}
+
+.dash-table-wrap {
+    overflow-x: auto;
+    background: #14243d;
+    padding: 18px;
+    border: 1px solid #263b5b;
+    border-radius: 15px;
+}
+
+.dash-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+.dash-table th,
+.dash-table td {
+    padding: 13px;
+    border-bottom: 1px solid #263b5b;
+}
+
+.dash-table th {
+    color: #60a5fa;
+}
+
+.dash-table td {
+    color: #dbeafe;
+}
+
+.dash-note {
+    color: #94a3b8;
+    font-size: 12px;
+    margin-top: 20px;
+}
+
+/* Dashboard animations */
+
+@keyframes fadeUp {
+    from {
+        opacity: 0;
+        transform: translateY(25px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes glow {
+    0%, 100% {
+        box-shadow: 0 0 8px rgba(59, 130, 246, 0.15);
+    }
+    50% {
+        box-shadow: 0 0 22px rgba(59, 130, 246, 0.4);
+    }
+}
+
+@keyframes floatIcon {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-7px);
+    }
+}
+
+@keyframes bannerGlow {
+    0%, 100% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+}
+
+.dash-welcome {
+    animation: fadeUp 0.8s ease both;
+    background-size: 200% 200%;
+    animation-name: fadeUp, bannerGlow;
+    animation-duration: 0.8s, 7s;
+    animation-iteration-count: 1, infinite;
+}
+
+.dash-card {
+    animation: fadeUp 0.7s ease both;
+}
+
+.dash-card:nth-child(1) {
+    animation-delay: 0.15s;
+}
+
+.dash-card:nth-child(2) {
+    animation-delay: 0.3s;
+}
+
+.dash-card:nth-child(3) {
+    animation-delay: 0.45s;
+}
+
+.dash-card:hover {
+    animation: glow 1.5s infinite;
+}
+
+.dash-icon {
+    display: inline-block;
+    animation: floatIcon 3s ease-in-out infinite;
+}
+
+.dash-shortcut {
+    animation: fadeUp 0.7s ease both;
+}
+
+.dash-shortcut:nth-child(1) { animation-delay: 0.2s; }
+.dash-shortcut:nth-child(2) { animation-delay: 0.3s; }
+.dash-shortcut:nth-child(3) { animation-delay: 0.4s; }
+.dash-shortcut:nth-child(4) { animation-delay: 0.5s; }
+
+.dash-table-wrap {
+    animation: fadeUp 0.9s ease both;
+    animation-delay: 0.5s;
+}
+
+.dash-table tbody tr {
+    transition: background 0.25s, transform 0.25s;
+}
+
+.dash-table tbody tr:hover {
+    background: #1e3a67;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .dash-welcome,
+    .dash-card,
+    .dash-icon,
+    .dash-shortcut,
+    .dash-table-wrap {
+        animation: none !important;
+    }
+}
+
+.welcome-layout {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    min-height: 300px;
+}
+
+.welcome-text {
+    flex: 1;
+}
+
+.hacker-3d {
+    width: 340px;
+    height: 280px;
+    position: relative;
+    flex-shrink: 0;
+}
+
+#hackerCanvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+    cursor: grab;
+}
+
+#hackerCanvas:active {
+    cursor: grabbing;
+}
+
+.hacker-3d span {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    text-align: center;
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: #60a5fa;
+}
+
+@media (max-width: 750px) {
+    .welcome-layout {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .hacker-3d {
+        width: 100%;
+        max-width: 340px;
+        align-self: center;
+    }
+}
+body > *:not(#binaryRain) {
+    position: relative;
+    z-index: 1;
+}
+</style>
+
+<!-- Welcome section -->
+
+<div class="dash-welcome welcome-layout">
+
+    <div class="welcome-text">
+        <h1>Welcome to SafeZone 🛡️</h1>
+        <p>Your Crime Analysis & Intelligence Dashboard</p>
+
+        <div class="dash-status">
+            ● System Status: Operational
+        </div>
+    </div>
+
+    <div class="hacker-3d">
+        <canvas id="hackerCanvas"></canvas>
+        <span>INTERACTIVE 3D MODEL • CLICK TO ROTATE</span>
+    </div>
+
+</div>
+
+
+<!-- Statistics -->
+<div class="dash-cards">
+
+    <div class="dash-card">
+        <div class="dash-icon">📊</div>
+        <h3>Total Crime Cases</h3>
+        <div class="dash-number">{{ total_cases }}</div>
+        <small>Cases in database</small>
+    </div>
+
+    <div class="dash-card">
+        <div class="dash-icon">⚖️</div>
+        <h3>Crime Categories</h3>
+        <div class="dash-number">{{ categories }}</div>
+        <small>Different crime types</small>
+    </div>
+
+    <div class="dash-card">
+        <div class="dash-icon">📍</div>
+        <h3>Areas Analyzed</h3>
+        <div class="dash-number">{{ areas }}</div>
+        <small>Areas in database</small>
+    </div>
+
+</div>
+
+<!-- Quick navigation -->
+<h2 class="dash-section-title">Explore SafeZone</h2>
+
+<div class="dash-shortcuts">
+
+    <a href="/map" class="dash-shortcut">
+        <span>🗺️</span>
+        <strong>Crime Map</strong>
+        <p>Explore locations</p>
+    </a>
+
+    <a href="/analytics" class="dash-shortcut">
+        <span>📈</span>
+        <strong>Crime Analytics</strong>
+        <p>View crime trends</p>
+    </a>
+
+    <a href="/search" class="dash-shortcut">
+        <span>🔎</span>
+        <strong>Search & Filter</strong>
+        <p>Find specific records</p>
+    </a>
+
+    <a href="/records" class="dash-shortcut">
+        <span>📁</span>
+        <strong>Crime Records</strong>
+        <p>Manage database records</p>
+    </a>
+
+</div>
+
+<!-- Recent records -->
+<h2 class="dash-section-title">Recent Crime Records</h2>
+
+<div class="dash-table-wrap">
+    <table class="dash-table">
+        <thead>
+            <tr>
+                <th>Crime Type</th>
+                <th>Area</th>
+                <th>Year</th>
+                <th>Cases</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for record in records[:5] %}
+            <tr>
+                <td>{{ record[1] }}</td>
+                <td>{{ record[2] }}</td>
+                <td>{{ record[3] }}</td>
+                <td>{{ record[4] }}</td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="4">No records available.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<p class="dash-note">
+    Note: This project currently uses demonstration records.
+    Figures are not verified official crime statistics.
+</p>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.min.js"></script>
+
+<script>
+const canvas = document.getElementById("hackerCanvas");
+
+if (canvas && typeof THREE !== "undefined") {
+
+    const scene = new THREE.Scene();
+
+    const camera = new THREE.PerspectiveCamera(
+        45, 340 / 280, 0.1, 100
+    );
+    camera.position.set(0, 1.5, 7);
+    camera.lookAt(0, 1.2, 0);
+
+    const renderer = new THREE.WebGLRenderer({
+        canvas: canvas,
+        alpha: true,
+        antialias: true
+    });
+
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+    function resizeModel() {
+        const width = canvas.clientWidth;
+        const height = canvas.clientHeight;
+
+        if (!width || !height) return;
+
+        camera.aspect = width / height;
+        camera.updateProjectionMatrix();
+        renderer.setSize(width, height, false);
+    }
+
+    resizeModel();
+    window.addEventListener("resize", resizeModel);
+
+    scene.add(new THREE.AmbientLight(0xffffff, 2));
+
+    const light = new THREE.PointLight(0x3b82f6, 35);
+    light.position.set(2, 4, 4);
+    scene.add(light);
+
+    const hacker = new THREE.Group();
+    scene.add(hacker);
+
+    // Hoodie body
+    const hoodie = new THREE.Mesh(
+        new THREE.BoxGeometry(1.5, 1.7, 0.8),
+        new THREE.MeshStandardMaterial({ color: 0x111827 })
+    );
+    hoodie.position.y = 1.2;
+    hacker.add(hoodie);
+
+    // Head
+    const head = new THREE.Mesh(
+        new THREE.SphereGeometry(0.58, 32, 32),
+        new THREE.MeshStandardMaterial({ color: 0x263449 })
+    );
+    head.position.y = 2.45;
+    hacker.add(head);
+
+    // Hood
+    const hood = new THREE.Mesh(
+        new THREE.SphereGeometry(0.7, 32, 32),
+        new THREE.MeshStandardMaterial({
+            color: 0x050b18,
+            side: THREE.DoubleSide
+        })
+    );
+    hood.scale.set(1.1, 1.1, 0.8);
+    hood.position.set(0, 2.55, -0.12);
+    hacker.add(hood);
+
+    // Face shadow
+    const face = new THREE.Mesh(
+        new THREE.SphereGeometry(0.43, 32, 32),
+        new THREE.MeshStandardMaterial({ color: 0x020617 })
+    );
+    face.position.set(0, 2.4, 0.35);
+    hacker.add(face);
+
+    // Glowing eyes
+    const eyeMaterial = new THREE.MeshBasicMaterial({
+        color: 0x38bdf8
+    });
+
+    [-0.17, 0.17].forEach(x => {
+        const eye = new THREE.Mesh(
+            new THREE.SphereGeometry(0.045, 16, 16),
+            eyeMaterial
+        );
+        eye.position.set(x, 2.48, 0.75);
+        hacker.add(eye);
+    });
+
+    // Laptop
+    const laptopMaterial = new THREE.MeshStandardMaterial({
+        color: 0x64748b,
+        metalness: 0.8,
+        roughness: 0.25
+    });
+
+    const laptop = new THREE.Mesh(
+        new THREE.BoxGeometry(2.1, 0.12, 1.2),
+        laptopMaterial
+    );
+    laptop.position.set(0, 0.55, 1);
+    hacker.add(laptop);
+
+    const screen = new THREE.Mesh(
+        new THREE.BoxGeometry(2.1, 1.35, 0.1),
+        laptopMaterial
+    );
+    screen.position.set(0, 1.25, 1.5);
+    hacker.add(screen);
+
+    // Blue laptop display
+    const display = new THREE.Mesh(
+    new THREE.PlaneGeometry(1.85, 1.1),
+    new THREE.MeshBasicMaterial({
+        color: 0x001a0a
+    })
+);
+
+display.position.set(0, 1.25, 1.56);
+hacker.add(display);
+
+// Animated green code
+const codeCanvas = document.createElement("canvas");
+codeCanvas.width = 512;
+codeCanvas.height = 300;
+
+const ctx = codeCanvas.getContext("2d");
+
+const codeTexture = new THREE.CanvasTexture(codeCanvas);
+
+const codeScreen = new THREE.Mesh(
+    new THREE.PlaneGeometry(1.75, 1.0),
+    new THREE.MeshBasicMaterial({
+        map: codeTexture
+    })
+);
+
+codeScreen.position.set(0, 1.25, 1.575);
+hacker.add(codeScreen);
+
+let codeOffset = 0;
+
+function drawCode() {
+    ctx.fillStyle = "#001a0a";
+    ctx.fillRect(0, 0, 512, 300);
+
+    ctx.font = "16px monospace";
+    ctx.fillStyle = "#39ff88";
+
+    const lines = [
+        "> SAFEZONE SYSTEM",
+        "> INITIALIZING...",
+        "ACCESS: AUTHORIZED",
+        "SCANNING DATABASE",
+        "LOADING CRIME DATA",
+        "ANALYZING PATTERNS",
+        "SYSTEM STATUS: ONLINE",
+        "ENCRYPTION: ACTIVE"
+    ];
+
+    lines.forEach((line, i) => {
+        ctx.fillText(line, 18, 35 + i * 32 - codeOffset);
+    });
+
+    codeOffset += 0.5;
+    if (codeOffset > 32) codeOffset = 0;
+
+    codeTexture.needsUpdate = true;
+}
+
+    // Floating blue light
+    const glow = new THREE.PointLight(0x0ea5e9, 18);
+    glow.position.set(0, 1.5, 2.5);
+    hacker.add(glow);
+
+    let rotation = 0;
+
+    canvas.addEventListener("click", () => {
+        rotation += Math.PI / 2;
+    });
+
+    function animate() {
+        requestAnimationFrame(animate);
+
+        hacker.rotation.y += (rotation - hacker.rotation.y) * 0.06;
+        drawCode();
+        renderer.render(scene, camera);
+    }
+
+    animate();
+
+} else {
+    console.error("Three.js did not load.");
+}
+</script>
+
+<script>
+const binaryCanvas = document.createElement("canvas");
+
+binaryCanvas.id = "binaryRain";
+
+Object.assign(binaryCanvas.style, {
+    position: "fixed",
+    top: "0",
+    left: "0",
+    width: "100%",
+    height: "100%",
+    pointerEvents: "none",
+    zIndex: "0",
+    opacity: "0.16"
+});
+
+document.body.appendChild(binaryCanvas);
+
+const binaryCtx = binaryCanvas.getContext("2d");
+
+let binaryColumns = [];
+let binaryWidth, binaryHeight;
+
+function resizeBinary() {
+    binaryWidth = window.innerWidth;
+    binaryHeight = window.innerHeight;
+
+    binaryCanvas.width = binaryWidth;
+    binaryCanvas.height = binaryHeight;
+
+    const count = Math.ceil(binaryWidth / 18);
+
+    binaryColumns = Array.from(
+        { length: count },
+        () => Math.random() * -50
+    );
+}
+
+resizeBinary();
+window.addEventListener("resize", resizeBinary);
+
+function animateBinary() {
+    binaryCtx.fillStyle = "rgba(0, 0, 0, 0.08)";
+    binaryCtx.fillRect(0, 0, binaryWidth, binaryHeight);
+
+    binaryCtx.font = "14px monospace";
+    binaryCtx.fillStyle = "#39ff88";
+
+    binaryColumns.forEach((y, i) => {
+        const digit = Math.random() > 0.5 ? "1" : "0";
+
+        binaryCtx.fillText(digit, i * 18, y * 18);
+
+        binaryColumns[i] += 0.3;
+
+        if (y * 18 > binaryHeight && Math.random() > 0.97) {
+            binaryColumns[i] = 0;
+        }
+    });
+
+    requestAnimationFrame(animateBinary);
+}
+
+animateBinary();
+</script>
+{% endblock %}
+

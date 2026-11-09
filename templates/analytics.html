@@ -1,0 +1,411 @@
+
+
+{% extends "base.html" %}
+
+{% block title %}Crime Intelligence | SafeZone{% endblock %}
+
+{% block content %}
+
+<style>
+.analytics-page {
+    color: #e2e8f0;
+}
+
+.analytics-header {
+    padding: 28px;
+    border-radius: 18px;
+    background: linear-gradient(120deg, #101e38, #123c70, #075985);
+    margin-bottom: 25px;
+    border: 1px solid #24558a;
+}
+
+.analytics-header h1 {
+    margin: 0 0 8px;
+    font-size: 29px;
+}
+
+.analytics-header p {
+    color: #bfdbfe;
+    margin: 0;
+}
+
+.analytics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 17px;
+    margin: 20px 0;
+}
+
+.analytics-card, .analytics-panel {
+    background: #14243d;
+    border: 1px solid #263b5b;
+    border-radius: 15px;
+    padding: 22px;
+}
+
+.analytics-card small {
+    color: #94a3b8;
+}
+
+.analytics-number {
+    color: #60a5fa;
+    font-size: 30px;
+    font-weight: bold;
+    margin-top: 10px;
+}
+
+.analytics-panel {
+    margin-bottom: 22px;
+}
+
+.analytics-panel h2 {
+    font-size: 18px;
+    margin-top: 0;
+}
+
+.chart-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.chart-box {
+    height: 300px;
+}
+
+.filter-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 15px;
+}
+
+.filter-grid label {
+    display: block;
+    margin-bottom: 8px;
+    color: #93c5fd;
+}
+
+.filter-grid select {
+    width: 100%;
+    padding: 12px;
+    border-radius: 9px;
+    background: #0b1930;
+    border: 1px solid #35577e;
+    color: white;
+}
+
+.area-result {
+    margin-top: 20px;
+    padding: 20px;
+    border-radius: 12px;
+    background: #0b1930;
+}
+
+.area-result h3 {
+    color: #60a5fa;
+}
+
+.map-box {
+    height: 330px;
+    border-radius: 13px;
+    overflow: hidden;
+}
+
+.analytics-note {
+    color: #94a3b8;
+    font-size: 12px;
+}
+
+@media(max-width: 600px) {
+    .analytics-header h1 {
+        font-size: 23px;
+    }
+}
+</style>
+
+<div class="analytics-page">
+
+    <div class="analytics-header">
+        <h1>◈ Crime Intelligence Center</h1>
+        <p>Advanced crime analysis and area intelligence</p>
+        <p style="margin-top:15px;">● ANALYTICS SYSTEM ONLINE</p>
+    </div>
+
+    <div class="analytics-grid">
+        <div class="analytics-card">
+            <small>TOTAL RECORDED CASES</small>
+            <div class="analytics-number" id="totalCases">0</div>
+        </div>
+
+        <div class="analytics-card">
+            <small>CRIME CATEGORIES</small>
+            <div class="analytics-number">{{ category_data|length }}</div>
+        </div>
+
+        <div class="analytics-card">
+            <small>AREAS ANALYZED</small>
+            <div class="analytics-number">{{ areas|length }}</div>
+        </div>
+    </div>
+
+    <div class="analytics-panel">
+        <h2>◈ Crime Statistics Overview</h2>
+
+        <div class="chart-grid">
+            <div class="chart-box">
+                <canvas id="crimeChart"></canvas>
+            </div>
+
+            <div class="chart-box">
+                <canvas id="yearChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="analytics-panel">
+        <h2>◈ Area Intelligence Explorer</h2>
+
+        <div class="filter-grid">
+            <div>
+                <label>Select Year</label>
+                <select id="yearSelect">
+                    {% for year in years %}
+                    <option value="{{ year }}">{{ year }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label>Select Area</label>
+                <select id="areaSelect">
+                    {% for area in areas %}
+                    <option value="{{ area }}">{{ area }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div class="area-result">
+            <h3 id="selectedArea">Area Intelligence</h3>
+            <p id="selectedYear"></p>
+            <div class="analytics-number" id="areaCases">0</div>
+            <small>Total cases in selected area</small>
+
+            <h3>Crime Breakdown</h3>
+            <div id="crimeBreakdown">Select an area to view details.</div>
+        </div>
+    </div>
+
+    <div class="analytics-panel">
+        <h2>◈ Geographic Intelligence Map</h2>
+        <div id="analyticsMap" class="map-box"></div>
+        <p class="analytics-note">
+            Map markers show illustrative area locations, not verified
+            incident coordinates.
+        </p>
+    </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link rel="stylesheet"
+href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script id="analytics-data" type="application/json">
+{
+    "categories": {{ category_data|tojson }},
+    "years": {{ year_data|tojson }},
+    "details": {{ detail_data|tojson }}
+}
+</script>
+
+<script>
+const data = JSON.parse(
+    document.getElementById("analytics-data").textContent
+);
+
+const total = data.categories.reduce(
+    (sum, item) => sum + Number(item[1]), 0
+);
+
+document.getElementById("totalCases").textContent = total;
+
+Chart.defaults.color = "#cbd5e1";
+Chart.defaults.borderColor = "#263b5b";
+
+
+let categoryChart;
+let yearChart;
+let map;
+let selectedMarker;
+const yearSelect = document.getElementById("yearSelect");
+const areaSelect = document.getElementById("areaSelect");
+
+const locations = {
+    "Park Street": [22.5535, 88.3530],
+    "Salt Lake": [22.5867, 88.4170],
+    "New Town": [22.5800, 88.4700],
+    "Esplanade": [22.5675, 88.3510],
+    "Howrah": [22.5958, 88.2636],
+    "Barasat": [22.7220, 88.4820]
+};
+
+function updateDashboard() {
+    const year = Number(yearSelect.value);
+    const area = areaSelect.value;
+
+    // Filter records by selected area
+    const areaRecords = data.details.filter(
+        x => x[1] === area
+    );
+
+    // Filter records by selected year and area
+    const filtered = areaRecords.filter(
+        x => Number(x[0]) === year
+    );
+
+    const total = filtered.reduce(
+        (sum, x) => sum + Number(x[3]), 0
+    );
+
+    document.getElementById("totalCases").textContent = total;
+
+    document.getElementById("selectedArea").textContent = area;
+    document.getElementById("selectedYear").textContent =
+        "Year: " + year;
+
+    document.getElementById("areaCases").textContent = total;
+
+    // Category chart for selected year and area
+    const categoryLabels = filtered.map(x => x[2]);
+    const categoryValues = filtered.map(x => x[3]);
+
+    if (categoryChart) categoryChart.destroy();
+
+    categoryChart = new Chart(
+        document.getElementById("crimeChart"), {
+            type: "bar",
+            data: {
+                labels: categoryLabels,
+                datasets: [{
+                    label: area + " - " + year,
+                    data: categoryValues,
+                    backgroundColor: "#3b82f6",
+                    borderRadius: 7
+                }]
+            },
+            options: {
+                maintainAspectRatio: false,
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: "Crime Categories - " + area + " (" + year + ")"
+                    },
+                    legend: { display: false }
+                }
+            }
+        }
+    );
+
+    // Yearly trend for selected area
+    const trend = data.years.map(item => {
+        const matching = areaRecords.filter(
+            x => Number(x[0]) === Number(item[0])
+        );
+
+        return matching.reduce(
+            (sum, x) => sum + Number(x[3]), 0
+        );
+    });
+
+    if (yearChart) yearChart.destroy();
+
+    yearChart = new Chart(
+        document.getElementById("yearChart"), {
+            type: "line",
+            data: {
+                labels: data.years.map(x => x[0]),
+                datasets: [{
+                    label: area + " yearly cases",
+                    data: trend,
+                    borderColor: "#38bdf8",
+                    backgroundColor: "rgba(56,189,248,0.15)",
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                maintainAspectRatio: false,
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: "Yearly Trends - " + area
+                    }
+                }
+            }
+        }
+    );
+
+    // Crime breakdown
+    const breakdown = document.getElementById("crimeBreakdown");
+    breakdown.innerHTML = "";
+
+    if (filtered.length === 0) {
+        breakdown.textContent = "No records for this selection.";
+    } else {
+        filtered.forEach(x => {
+            const row = document.createElement("p");
+            row.textContent = x[2] + ": " + x[3] + " cases";
+            breakdown.appendChild(row);
+        });
+    }
+
+    // Show only selected location on map
+    if (selectedMarker) {
+        map.removeLayer(selectedMarker);
+        selectedMarker = null;
+    }
+
+    const coordinates = locations[area];
+
+    if (coordinates) {
+        map.setView(coordinates, 13);
+
+        selectedMarker = L.marker(coordinates)
+            .addTo(map)
+            .bindPopup(
+                "<b>" + area + "</b><br>" +
+                year + " cases: " + total
+            )
+            .openPopup();
+    } else {
+        map.setView([22.5726, 88.3639], 10);
+    }
+}
+
+// Initialize map
+map = L.map("analyticsMap").setView(
+    [22.5726, 88.3639], 10
+);
+
+L.tileLayer(
+    "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+    {
+        attribution: "&copy; OpenStreetMap contributors"
+    }
+).addTo(map);
+
+// Update everything when selection changes
+yearSelect.addEventListener("change", updateDashboard);
+areaSelect.addEventListener("change", updateDashboard);
+
+updateDashboard();
+</script>
+
+{% endblock %}
+
+
