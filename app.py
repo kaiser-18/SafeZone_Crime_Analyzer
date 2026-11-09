@@ -42,26 +42,12 @@ def init_db():
     if "longitude" not in columns:
         cursor.execute("ALTER TABLE crimes ADD COLUMN longitude REAL")
 
-    cursor.execute("SELECT COUNT(*) FROM crimes")
-
-    if cursor.fetchone()[0] == 0:
-        sample_data = [
-            ("Theft", "Zone A", 2024, 20),
-            ("Assault", "Zone B", 2024, 10),
-            ("Fraud", "Zone C", 2025, 15),
-            ("Vandalism", "Zone A", 2025, 8),
-            ("Theft", "Zone D", 2025, 25)
-        ]
-
-        cursor.executemany("""
-            INSERT INTO crimes (crime_type, area, year, cases)
-            VALUES (?, ?, ?, ?)
-        """, sample_data)
+    
 
     conn.commit()
     conn.close()
 
-    
+
 init_db()
 
 @app.route("/")
