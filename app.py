@@ -98,14 +98,17 @@ def home():
     if conditions:
         where_clause = "WHERE " + " AND ".join(conditions)
 
-    # Filtered crime records
-    cursor.execute(f"""
-        SELECT crime_type, area, year, cases
-        FROM crimes
-        {where_clause}
-        ORDER BY year DESC, id DESC
-    """, values)
+# Dashboard records - temporary filter-free test
+    cursor.execute("""
+    SELECT id, crime_type, area, year, cases
+    FROM crimes
+    ORDER BY year DESC, id DESC
+    """)
+
     records = cursor.fetchall()
+
+    print("DASHBOARD RECORD COUNT:", len(records))
+    print("DASHBOARD RECORDS:", records)
 
     # Total cases matching filters
     cursor.execute(f"""
@@ -318,6 +321,12 @@ def search_page():
         ORDER BY year DESC
     """, values)
     records = cursor.fetchall()
+    # DEBUG: Check database records
+    cursor.execute("SELECT COUNT(*) FROM crimes")
+    print("DATABASE:", DB_NAME)
+    print("TOTAL DATABASE RECORDS:", cursor.fetchone()[0])
+    print("FILTERED RECORDS:", len(records))
+    print("SELECTED FILTERS:", selected_crime, selected_year, selected_area)
 
     total_records = len(records)
     total_cases = sum(row[4] for row in records)
